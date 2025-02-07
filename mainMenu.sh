@@ -80,4 +80,31 @@ connectToDatabase() {
     fi
 }
 
+dropDatabase() {
+    databases=($(ls -d */ 2>/dev/null | sed 's#/##'))
+    if [ ${#databases[@]} -eq 0 ]; then
+        kdialog --sorry "No databases to delete."
+        return
+    fi
+
+    menu_items=()
+    index=1
+
+    for db in "${databases[@]}"; do
+        menu_items+=("$index" "$db")
+        ((index++))
+    done
+
+    db_index=$(kdialog --menu "Select a Database to Drop" "${menu_items[@]}")
+
+    if [ -n "$db_index" ]; then
+        selected_db="${databases[$((db_index - 1))]}"
+
+        if kdialog --yesno "Are you sure you want to delete '$selected_db'?"; then
+            rm -r "$selected_db"
+            kdialog --msgbox "Database '$selected_db' deleted successfully."
+        fi
+    fi
+}
+
 mainMenu
