@@ -40,12 +40,12 @@ createDatabase() {
 }
 
 listDatabases() {
-    if [ -z "$(ls -d */ 2>/dev/null)" ]; then
+    if [ -z "$(ls -d */)" ]; then
         kdialog --sorry "No databases found."
         return
     fi
 
-    ls -d */ 2>/dev/null |
+    ls -d */ |
         sed 's#/##' | #removes the "/" from output
         awk '
         BEGIN {print "Your Databases:\n"} 
@@ -56,7 +56,7 @@ listDatabases() {
 }
 
 connectToDatabase() {
-    databases=($(ls -d */ 2>/dev/null | sed 's#/##'))
+    databases=($(ls -d */ | sed 's#/##'))
 
     if [ ${#databases[@]} -eq 0 ]; then
         kdialog --sorry "No databases available to connect."
@@ -82,7 +82,7 @@ connectToDatabase() {
 }
 
 dropDatabase() {
-    databases=($(ls -d */ 2>/dev/null | sed 's#/##'))
+    databases=($(ls -d */ | sed 's#/##'))
     if [ ${#databases[@]} -eq 0 ]; then
         kdialog --sorry "No databases to delete."
         return
