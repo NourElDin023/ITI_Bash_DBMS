@@ -54,4 +54,30 @@ listDatabases() {
     kdialog --textbox .databaseNames.txt
 }
 
+connectToDatabase() {
+    databases=($(ls -d */ 2>/dev/null | sed 's#/##'))
+
+    if [ ${#databases[@]} -eq 0 ]; then
+        kdialog --sorry "No databases available to connect."
+        return
+    fi
+
+    menu_items=()
+    index=1
+
+    for db in "${databases[@]}"; do
+        menu_items+=("$index" "$db")
+        ((index++))
+    done
+
+    db_index=$(kdialog --menu "Select a Database to Connect" "${menu_items[@]}")
+
+    if [ -n "$db_index" ]; then
+        selected_db="${databases[$((db_index - 1))]}"
+        kdialog --msgbox "Successfully connected to database: $selected_db"
+        tableMenu "$selected_db"
+        cd "$HOME/databases"
+    fi
+}
+
 mainMenu
