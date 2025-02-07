@@ -11,7 +11,8 @@ mainMenu() {
             2 "List Databases" \
             3 "Connect To Database" \
             4 "Drop Database" \
-            5 "Exit")
+            5 "Exit" \
+            --default "Create Database")
 
         case "$choice" in
         1) createDatabase ;;
