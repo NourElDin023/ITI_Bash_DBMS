@@ -38,4 +38,20 @@ createDatabase() {
     fi
 }
 
+listDatabases() {
+    if [ -z "$(ls -d */ 2>/dev/null)" ]; then
+        kdialog --sorry "No databases found."
+        return
+    fi
+
+    ls -d */ 2>/dev/null |
+        sed 's#/##' | #removes the "/" from output
+        awk '
+        BEGIN {print "Your Databases:\n"} 
+        {print "\t" NR ": " $1"\n\t-----------------"} 
+        END {print "\nTotal Databases: "NR}
+        ' >.databaseNames.txt
+    kdialog --textbox .databaseNames.txt
+}
+
 mainMenu
