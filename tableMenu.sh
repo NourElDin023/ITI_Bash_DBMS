@@ -103,7 +103,7 @@ checkIfTableExists() {
 }
 
 listTables() {
-    checkIfTableExists
+    checkIfTableExists "$db_name"
 
     echo "$tables" | awk '
     BEGIN {print "Tables in '"$db_name"':\n"} 
@@ -116,7 +116,7 @@ listTables() {
 }
 
 dropTable() {
-    checkIfTableExists
+    checkIfTableExists "$db_name"
     table_menu=()
     index=1
     for table in $tables; do
@@ -137,7 +137,7 @@ dropTable() {
 }
 
 insertIntoTable() {
-    checkIfTableExists
+    checkIfTableExists "$db_name"
 
     table_menu=()
     index=1
@@ -262,7 +262,7 @@ insertIntoTable() {
 }
 
 selectFromTable() {
-    checkIfTableExists
+    checkIfTableExists "$db_name"
 
     # Create table selection menu
     table_menu=()
