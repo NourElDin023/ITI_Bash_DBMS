@@ -110,3 +110,32 @@ listTables() {
     kdialog --textbox .tableNames.txt 280 320
     rm .tableNames.txt
 }
+
+dropTable() {
+    db_name="$1"
+    table_dir="$HOME/databases/$db_name"
+    tables=$(ls "$table_dir"/*.table | sed 's#.*/##' | sed 's#.table##')
+
+    if [ -z "$tables" ]; then
+        kdialog --sorry "No tables found in database '$db_name'."
+        return
+    fi
+
+    table_menu=()
+    index=1
+    for table in $tables; do
+        table_menu+=("$index" "$table")
+        ((index++))
+    done
+
+    table_choice=$(kdialog --menu "Select a Table to Drop" "${table_menu[@]}")
+
+    if [ -n "$table_choice" ]; then
+        selected_table="${table_menu[((table_choice * 2 - 1))]}"
+        if kdialog --yesno "Are you sure you want to delete '$selected_table'?"; then
+            rm "$table_dir/$selected_table.table"
+            rm "$table_dir/$selected_table.meta"
+            kdialog --msgbox "Table '$selected_table' deleted successfully."
+        fi
+    fi
+}
