@@ -104,7 +104,7 @@ checkIfTableExists() {
 
 listTables() {
     checkIfTableExists "$db_name"
-
+    [ -z "$tables" ] && return
     echo "$tables" | awk '
     BEGIN {print "Tables in '"$db_name"':\n"} 
     {print "\t" NR ": " $1 "\n\t-----------------"} 
