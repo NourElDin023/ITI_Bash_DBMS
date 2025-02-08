@@ -11,7 +11,7 @@ tableMenu() {
             6 "Delete From Table" \
             7 "Update Table" \
             8 "Back to Main Menu" \
-            9 "Exit Program")
+            9 "Exit Program" --default "Create Table")
 
         case "$choice" in
         1) createTable "$db_name" ;;
