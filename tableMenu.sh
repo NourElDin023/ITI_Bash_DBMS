@@ -1,9 +1,8 @@
 tableMenu() {
     db_name="$1"
-    cd "$HOME/databases/$db_name"
 
     while true; do
-        choice=$(kdialog --menu "Manage Tables in $db_name" \
+        choice=$(kdialog --title "Database: $db_name" --menu "Manage Tables in $db_name" \
             1 "Create Table" \
             2 "List Tables" \
             3 "Drop Table" \
@@ -28,4 +27,66 @@ tableMenu() {
         esac
     done
     cd "$HOME/databases"
+}
+
+createTable() {
+    db_name="$1"
+
+    table_name=$(kdialog --inputbox "Enter Table Name:")
+    [[ $? -ne 0 ]] && return
+
+    table_name=$(echo "$table_name" | awk '{$1=$1;print}')
+
+    if [[ ! "$table_name" =~ ^[a-zA-Z0-9_]+$ ]]; then
+        kdialog --sorry "Error: Table name can only contain letters, numbers, and underscores."
+        return
+    fi
+
+    if [[ -f "$db_name/$table_name.table" ]]; then
+        kdialog --sorry "Error: Table already exists."
+        return
+    fi
+
+    num_cols=$(kdialog --inputbox "Enter Number of Columns:")
+    [[ $? -ne 0 ]] && return
+
+    if ! [[ "$num_cols" =~ ^[1-9][0-9]*$ ]]; then
+        kdialog --sorry "Error: Invalid column number."
+        return
+    fi
+
+    cols=()
+    col_defs=()
+    pk_column=""
+
+    for ((i = 1; i <= num_cols; i++)); do
+        col_name=$(kdialog --inputbox "Enter name for column $i:")
+        [[ $? -ne 0 ]] && return
+
+        col_name=$(echo "$col_name" | awk '{$1=$1;print}')
+        col_type=$(kdialog --menu "Select data type for $col_name" 1 "int" 2 "string")
+        [[ $? -ne 0 ]] && return
+
+        if [[ -z "$pk_column" ]]; then
+            kdialog --yesno "Is $col_name the primary key?"
+            response=$?
+
+            if [[ $response -eq 0 ]]; then
+                pk_column="$col_name"
+                col_defs+=("$col_name:$col_type:PK")
+            elif [[ $response -eq 1 ]]; then
+                col_defs+=("$col_name:$col_type")
+            else
+                return
+            fi
+        else
+            col_defs+=("$col_name:$col_type")
+        fi
+
+    done
+
+    echo "${col_defs[*]}" | tr ' ' '|' >"$db_name/$table_name.meta"
+    touch "$db_name/$table_name.table"
+
+    kdialog --msgbox "Table '$table_name' created successfully in database '$db_name'."
 }
