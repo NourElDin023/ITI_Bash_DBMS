@@ -90,3 +90,23 @@ createTable() {
 
     kdialog --msgbox "Table '$table_name' created successfully in database '$db_name'."
 }
+
+listTables() {
+    db_name="$1"
+    table_dir="$HOME/databases/$db_name"
+    tables=$(ls "$table_dir"/*.table | sed 's#.*/##' | sed 's#.table##')
+
+    if [ -z "$tables" ]; then
+        kdialog --sorry "No tables found in database '$db_name'."
+        return
+    fi
+
+    echo "$tables" | awk '
+    BEGIN {print "Tables in '"$db_name"':\n"} 
+    {print "\t" NR ": " $1 "\n\t-----------------"} 
+    END {print "\nTotal Tables: " NR}
+    ' >.tableNames.txt
+
+    kdialog --textbox .tableNames.txt 280 320
+    rm .tableNames.txt
+}
