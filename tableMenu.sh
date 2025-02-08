@@ -91,7 +91,7 @@ createTable() {
     kdialog --msgbox "Table '$table_name' created successfully in database '$db_name'."
 }
 
-listTables() {
+checkIfTableExists() {
     db_name="$1"
     table_dir="$HOME/databases/$db_name"
     tables=$(ls "$table_dir"/*.table | sed 's#.*/##' | sed 's#.table##')
@@ -100,6 +100,10 @@ listTables() {
         kdialog --sorry "No tables found in database '$db_name'."
         return
     fi
+}
+
+listTables() {
+    checkIfTableExists
 
     echo "$tables" | awk '
     BEGIN {print "Tables in '"$db_name"':\n"} 
@@ -112,15 +116,7 @@ listTables() {
 }
 
 dropTable() {
-    db_name="$1"
-    table_dir="$HOME/databases/$db_name"
-    tables=$(ls "$table_dir"/*.table | sed 's#.*/##' | sed 's#.table##')
-
-    if [ -z "$tables" ]; then
-        kdialog --sorry "No tables found in database '$db_name'."
-        return
-    fi
-
+    checkIfTableExists
     table_menu=()
     index=1
     for table in $tables; do
