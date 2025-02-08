@@ -353,3 +353,115 @@ selectFromTable() {
         ;;
     esac
 }
+
+deleteFromTable() {
+    checkIfTableExists "$db_name"
+
+    # Create table selection menu
+    table_menu=()
+    index=1
+    for table in $tables; do
+        table_menu+=("$index" "$table")
+        ((index++))
+    done
+
+    table_choice=$(kdialog --menu "Select a table to delete from:" "${table_menu[@]}")
+    [ -z "$table_choice" ] && return
+
+    selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
+    table_file="$table_dir/$selected_table.table"
+    metadata_file="$table_dir/$selected_table.meta"
+
+    # Check if table is empty
+    if [ ! -s "$table_file" ]; then
+        kdialog --sorry "Table '$selected_table' is empty."
+        return
+    fi
+
+    # Get delete method choice
+    delete_choice=$(kdialog --menu "Select Delete Method:" \
+        1 "Delete by Primary Key" \
+        2 "Delete by Search Value")
+    [ -z "$delete_choice" ] && return
+
+    case "$delete_choice" in
+
+    1)
+        # Delete by Primary Key
+        # Find primary key column name and index
+        pk_col=""
+        pk_index=0
+        IFS='|' read -ra metadata_array <"$metadata_file"
+        for i in "${!metadata_array[@]}"; do
+            IFS=':' read -r col_name _ is_pk <<<"${metadata_array[$i]}"
+            if [ "$is_pk" == "PK" ]; then
+                pk_col="$col_name"
+                pk_index=$i
+                break
+            fi
+        done
+
+        if [ -z "$pk_col" ]; then
+            kdialog --sorry "No primary key found in table '$selected_table'."
+            return
+        fi
+
+        # Get PK value from user
+        pk_value=$(kdialog --inputbox "Enter Primary Key value to delete:")
+        [ $? -ne 0 ] && return
+
+        # Create temporary file
+        temp_file=$(mktemp)
+        deleted=false
+
+        # Search and delete matching row
+        while IFS='|' read -r line || [ -n "$line" ]; do
+            row_pk=$(echo "$line" | cut -d'|' -f$((pk_index + 1)))
+            if [ "$row_pk" != "$pk_value" ]; then
+                echo "$line" >>"$temp_file"
+            else
+                deleted=true
+            fi
+        done <"$table_file"
+
+        if [ "$deleted" = true ]; then
+            mv "$temp_file" "$table_file"
+            kdialog --msgbox "Record with Primary Key '$pk_value' deleted successfully."
+        else
+            rm "$temp_file"
+            kdialog --sorry "No record found with Primary Key '$pk_value'."
+        fi
+        ;;
+
+    2)
+        # Delete by Search Value
+        search_value=$(kdialog --inputbox "Enter value to search and delete:")
+        [ $? -ne 0 ] && return
+
+        # Create temporary file
+        temp_file=$(mktemp)
+        deleted=false
+
+        # Search and delete matching rows
+        while IFS= read -r line || [ -n "$line" ]; do
+            if ! echo "$line" | grep -qi "$search_value"; then
+                echo "$line" >>"$temp_file"
+            else
+                deleted=true
+            fi
+        done <"$table_file"
+
+        if [ "$deleted" = true ]; then
+            mv "$temp_file" "$table_file"
+            kdialog --msgbox "Records containing '$search_value' deleted successfully."
+        else
+            rm "$temp_file"
+            kdialog --sorry "No records found containing '$search_value'."
+        fi
+        ;;
+
+    *)
+        return
+        ;;
+    esac
+}
