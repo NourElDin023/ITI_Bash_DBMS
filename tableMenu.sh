@@ -260,3 +260,96 @@ insertIntoTable() {
 
     kdialog --msgbox "Data inserted successfully into '$selected_table'."
 }
+
+selectFromTable() {
+    checkIfTableExists
+
+    # Create table selection menu
+    table_menu=()
+    index=1
+    for table in $tables; do
+        table_menu+=("$index" "$table")
+        ((index++))
+    done
+
+    table_choice=$(kdialog --menu "Select a table to query:" "${table_menu[@]}")
+
+    if [ -z "$table_choice" ]; then
+        return
+    fi
+
+    selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
+    table_file="$table_dir/$selected_table.table"
+    metadata_file="$table_dir/$selected_table.meta"
+
+    # Show select options menu
+    select_choice=$(kdialog --menu "Select Query Type" \
+        1 "Show all records" \
+        2 "Find a value")
+
+    case "$select_choice" in
+    1)
+        # Display all records with proper formatting
+        if [ ! -s "$table_file" ]; then
+            kdialog --sorry "Table '$selected_table' is empty."
+            return
+        fi
+
+        # Get column names from metadata
+        IFS='|' read -ra metadata_array <"$metadata_file"
+        header="<pre>\n"
+        separator="--------------------\n"
+
+        # Build header from metadata
+        for meta in "${metadata_array[@]}"; do
+            col_name="${meta%%:*}"
+            header+="$col_name\t"
+        done
+        header+="\n$separator"
+
+        # Prepare data
+        content=$(cat "$table_file" | sed 's/|/\t/g')
+
+        # Show formatted output
+        echo -e "${header}${content}\n" >".table_data.txt"
+        kdialog --textbox ".table_data.txt" 500 400
+        rm ".table_data.txt"
+        ;;
+
+    2)
+        # Get search value from user
+        search_value=$(kdialog --inputbox "Enter search value:")
+        if [ $? -ne 0 ]; then
+            return
+        fi
+
+        # Get column names from metadata for header
+        IFS='|' read -ra metadata_array <"$metadata_file"
+        header="<pre>\n"
+        separator="--------------------\n"
+
+        # Build header from metadata
+        for meta in "${metadata_array[@]}"; do
+            col_name="${meta%%:*}"
+            header+="$col_name\t"
+        done
+        header+="\n$separator"
+
+        # Search in file and format results
+        search_result=$(grep -i "$search_value" "$table_file" | sed 's#|#\t#g')
+
+        if [ -z "$search_result" ]; then
+            kdialog --sorry "No records found matching '$search_value'"
+        else
+            # Show formatted output with header
+            echo -e "${header}${search_result}\n" >".search_results.txt"
+            kdialog --textbox ".search_results.txt" 500 400
+            rm ".search_results.txt"
+        fi
+        ;;
+
+    *)
+        return
+        ;;
+    esac
+}
