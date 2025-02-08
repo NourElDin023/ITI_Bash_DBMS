@@ -52,7 +52,7 @@ listDatabases() {
         {print "\t" NR ": " $1"\n\t-----------------"} 
         END {print "\nTotal Databases: "NR}
         ' >.databaseNames.txt
-    kdialog --textbox .databaseNames.txt
+    kdialog --textbox .databaseNames.txt 280 320
 }
 
 connectToDatabase() {
