@@ -72,8 +72,16 @@ createTable() {
                 continue
             fi
 
+            # Check if column name is unique
+            if [[ " ${cols[*]} " =~ " $col_name " ]]; then
+                kdialog --sorry "Error: Column '$col_name' already exists. Choose another name."
+                continue
+            fi
+
             break
         done
+
+        cols+=("$col_name") # Store column name
 
         col_type=$(kdialog --menu "Select data type for $col_name" 1 "int" 2 "string")
         [[ $? -ne 0 ]] && return
