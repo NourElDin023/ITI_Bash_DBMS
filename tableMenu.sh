@@ -60,10 +60,21 @@ createTable() {
     pk_column=""
 
     for ((i = 1; i <= num_cols; i++)); do
-        col_name=$(kdialog --inputbox "Enter name for column $i:")
-        [[ $? -ne 0 ]] && return
+        while true; do
+            col_name=$(kdialog --inputbox "Enter name for column $i:")
+            [[ $? -ne 0 ]] && return
 
-        col_name=$(echo "$col_name" | awk '{$1=$1;print}')
+            col_name=$(echo "$col_name" | awk '{$1=$1;print}')
+
+            # Check if column name is valid
+            if [[ ! "$col_name" =~ ^[a-zA-Z0-9_]+$ ]]; then
+                kdialog --sorry "Error: Column name can only contain letters, numbers, and underscores."
+                continue
+            fi
+
+            break
+        done
+
         col_type=$(kdialog --menu "Select data type for $col_name" 1 "int" 2 "string")
         [[ $? -ne 0 ]] && return
 
