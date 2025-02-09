@@ -261,11 +261,7 @@ insertIntoTable() {
             fi
 
             # Validate string fields (col_type == "2" means it's a string)
-            if [[ "$col_type" == "2" && ! "$value" =~ ^[a-zA-Z0-9_[:space:]]+$ ]]; then
-                kdialog --sorry "Invalid input for $col_name. Only letters, numbers, spaces, and underscores allowed."
-                continue
-            fi
-
+            [[ "$col_type" == "2" && "$value" == *"|"* ]] && kdialog --sorry "Invalid input for $col_name. The '|' character is not allowed." && continue
             # **Check PK Uniqueness**
             if [ "$is_pk" == "PK" ]; then
                 if grep -q "^$value|" "$table_file" 2>/dev/null; then
