@@ -151,7 +151,7 @@ dropTable() {
     table_choice=$(kdialog --menu "Select a Table to Drop" "${table_menu[@]}")
 
     if [ -n "$table_choice" ]; then
-        selected_table="${table_menu[((table_choice * 2 - 1))]}"
+        selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
         if kdialog --yesno "Are you sure you want to delete '$selected_table'?"; then
             rm "$table_dir/$selected_table.table"
             rm "$table_dir/$selected_table.meta"
