@@ -262,28 +262,13 @@ selectFromTable() {
 
     table_choice=$(kdialog --menu "Select a table to query:" "${table_menu[@]}")
 
-    if [ -z "$table_choice" ]; then
-        return
-    fi
+    [ -z "$table_choice" ] && return
 
     selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
     table_file="$table_dir/$selected_table.table"
     metadata_file="$table_dir/$selected_table.meta"
 
-    # Show select options menu
-    select_choice=$(kdialog --menu "Select Query Type" \
-        1 "Show all records" \
-        2 "Find a value")
-
-    case "$select_choice" in
-    1)
-        # Display all records with proper formatting
-        if [ ! -s "$table_file" ]; then
-            kdialog --sorry "Table '$selected_table' is empty."
-            return
-        fi
-
-        # Get column names from metadata
+    # Read column names from metadata
         IFS='|' read -ra metadata_array <"$metadata_file"
         header="<pre>\n"
         separator="--------------------\n"
@@ -295,8 +280,18 @@ selectFromTable() {
         done
         header+="\n$separator"
 
+    # Show select options menu
+    select_choice=$(kdialog --menu "Select Query Type" \
+        1 "Show all records" \
+        2 "Find a value")
+
+    case "$select_choice" in
+    1)
+        # Show all records
+        [ ! -s "$table_file" ] && kdialog --sorry "Table '$selected_table' is empty." && return
+
         # Prepare data
-        content=$(cat "$table_file" | sed 's/|/\t/g')
+        content=$(sed 's/|/\t/g' "$table_file")
 
         # Show formatted output
         echo -e "${header}${content}\n" >".table_data.txt"
@@ -307,24 +302,10 @@ selectFromTable() {
     2)
         # Get search value from user
         search_value=$(kdialog --inputbox "Enter search value:")
-        if [ $? -ne 0 ]; then
-            return
-        fi
-
-        # Get column names from metadata for header
-        IFS='|' read -ra metadata_array <"$metadata_file"
-        header="<pre>\n"
-        separator="--------------------\n"
-
-        # Build header from metadata
-        for meta in "${metadata_array[@]}"; do
-            col_name="${meta%%:*}"
-            header+="$col_name\t"
-        done
-        header+="\n$separator"
+        [ $? -ne 0 ] && return
 
         # Search in file and format results
-        search_result=$(grep -i "$search_value" "$table_file" | sed 's#|#\t#g')
+        search_result=$(grep -i "$search_value" "$table_file" | sed 's/|/\t/g')
 
         if [ -z "$search_result" ]; then
             kdialog --sorry "No records found matching '$search_value'"
