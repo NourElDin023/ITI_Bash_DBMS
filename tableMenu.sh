@@ -85,6 +85,11 @@ createTable() {
 
     done
 
+    if [[ -z "$pk_column" ]]; then
+        kdialog --sorry "Error: You must select at least one column as the Primary Key."
+        return
+    fi
+
     echo "${col_defs[*]}" | tr ' ' '|' >"$db_name/$table_name.meta"
     touch "$db_name/$table_name.table"
 
