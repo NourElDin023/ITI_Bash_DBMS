@@ -171,20 +171,14 @@ insertIntoTable() {
     done
 
     table_choice=$(kdialog --menu "Select a table to insert data into:" "${table_menu[@]}")
-
-    if [ -z "$table_choice" ]; then
-        return
-    fi
+    [ -z "$table_choice" ] && return
 
     selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
 
     metadata_file="$table_dir/$selected_table.meta"
     table_file="$table_dir/$selected_table.table"
 
-    if [ ! -f "$metadata_file" ]; then
-        kdialog --sorry "Metadata file not found for table '$selected_table'."
-        return
-    fi
+    [ ! -f "$metadata_file" ] && kdialog --sorry "Metadata file not found for table '$selected_table'." && return
 
     # Read column names and types
     columns=()
@@ -207,10 +201,7 @@ insertIntoTable() {
         fi
     done
 
-    if [ ${#columns[@]} -eq 0 ]; then
-        kdialog --sorry "No columns found in metadata."
-        return
-    fi
+    [ ${#columns[@]} -eq 0 ] && kdialog --sorry "No columns found in metadata." && return
 
     # Collect user input for each column
     row_data=()
@@ -241,9 +232,7 @@ insertIntoTable() {
             value=$(kdialog --inputbox "$hint")
 
             # **Handle Cancel or ESC Pressed**
-            if [ $? -ne 0 ]; then
-                return # Exit the function if user cancels
-            fi
+            [ $? -ne 0 ] && return
 
             # **Only Primary Key Can't Be Empty**
             if [ -z "$value" ] && [ "$is_pk" == "PK" ]; then
@@ -255,10 +244,7 @@ insertIntoTable() {
             fi
 
             # Validate integer fields (col_type == "1" means it's an integer)
-            if [[ "$col_type" == "1" && ! "$value" =~ ^[0-9]+$ ]]; then
-                kdialog --sorry "Invalid input for $col_name. Expected an integer."
-                continue
-            fi
+            [[ "$col_type" == "1" && ! "$value" =~ ^[0-9]+$ ]] && kdialog --sorry "Invalid input for $col_name. Expected an integer." && continue
 
             # Validate string fields (col_type == "2" means it's a string)
             [[ "$col_type" == "2" && "$value" == *"|"* ]] && kdialog --sorry "Invalid input for $col_name. The '|' character is not allowed." && continue
