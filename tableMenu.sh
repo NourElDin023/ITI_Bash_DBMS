@@ -268,19 +268,55 @@ selectFromTable() {
     table_file="$table_dir/$selected_table.table"
     metadata_file="$table_dir/$selected_table.meta"
 
-    # Read column names from metadata
-    IFS='|' read -ra metadata_array <"$metadata_file"
-    header="<pre>\n"
-    separator="--------------------\n"
+    IFS='|' read -ra headers <"$metadata_file"
 
-    # Build header from metadata
-    for meta in "${metadata_array[@]}"; do
-        col_name="${meta%%:*}"
-        header+="$col_name\t"
-    done
-    header+="\n$separator"
+    format_table_output() {
+        local data="$1"
+        local -a column_widths
 
-    # Show select options menu
+        # Determine column widths
+        while IFS='|' read -r line; do
+            IFS='|' read -ra values <<<"$line"
+            for i in "${!values[@]}"; do
+                len=${#values[$i]}
+                ((len > column_widths[i])) && column_widths[i]=$len
+            done
+        done <<<"$data"
+
+        # Ensure column headers count towards max width
+        for i in "${!headers[@]}"; do
+            col_name="${headers[$i]%%:*}"
+            ((${#col_name} > column_widths[i])) && column_widths[i]=${#col_name}
+        done
+
+        # Create formatted separator
+        separator="+"
+        for width in "${column_widths[@]}"; do
+            separator+="$(printf '%*s' "$((width + 2))" | tr ' ' '-')+"
+        done
+
+        # Build the header row
+        header_row="|"
+        for i in "${!headers[@]}"; do
+            col_name="${headers[$i]%%:*}"
+            header_row+=" $(printf "%-${column_widths[i]}s" "$col_name") |"
+        done
+
+        # Format data rows
+        output="${separator}\n${header_row}\n${separator}\n"
+        while IFS='|' read -r line; do
+            row="|"
+            IFS='|' read -ra values <<<"$line"
+            for i in "${!values[@]}"; do
+                row+=" $(printf "%-${column_widths[i]}s" "${values[$i]}") |"
+            done
+            output+="${row}\n"
+        done <<<"$data"
+
+        output+="${separator}\n"
+        echo -e "$output"
+    }
+
     select_choice=$(kdialog --menu "Select Query Type" \
         1 "Show all records" \
         2 "Find a value")
@@ -289,14 +325,8 @@ selectFromTable() {
     1)
         # Show all records
         [ ! -s "$table_file" ] && kdialog --sorry "Table '$selected_table' is empty." && return
-
-        # Prepare data
-        content=$(sed 's/|/\t/g' "$table_file")
-
-        # Show formatted output
-        echo -e "${header}${content}\n" >".table_data.txt"
-        kdialog --textbox ".table_data.txt" 500 400
-        rm ".table_data.txt"
+        formatted_output=$(format_table_output "$(cat "$table_file")")
+        kdialog --msgbox "<pre>${formatted_output}</pre>" --ok-label "done"
         ;;
 
     2)
@@ -304,16 +334,12 @@ selectFromTable() {
         search_value=$(kdialog --inputbox "Enter search value:")
         [ $? -ne 0 ] && return
 
-        # Search in file and format results
-        search_result=$(grep -i "$search_value" "$table_file" | sed 's/|/\t/g')
-
+        search_result=$(grep -i "$search_value" "$table_file")
         if [ -z "$search_result" ]; then
             kdialog --sorry "No records found matching '$search_value'"
         else
-            # Show formatted output with header
-            echo -e "${header}${search_result}\n" >".search_results.txt"
-            kdialog --textbox ".search_results.txt" 500 400
-            rm ".search_results.txt"
+            formatted_output=$(format_table_output "$search_result")
+            kdialog --msgbox "<pre>${formatted_output}</pre>" --ok-label "done"
         fi
         ;;
 
