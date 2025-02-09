@@ -460,3 +460,156 @@ deleteFromTable() {
         ;;
     esac
 }
+
+updateTable() {
+    checkIfTableExists "$db_name"
+
+    # Create table selection menu
+    table_menu=()
+    index=1
+    for table in $tables; do
+        table_menu+=("$index" "$table")
+        ((index++))
+    done
+
+    table_choice=$(kdialog --menu "Select a table to update:" "${table_menu[@]}")
+    [ -z "$table_choice" ] && return
+
+    selected_table="$(echo "$tables" | sed -n "${table_choice}p")"
+    table_file="$table_dir/$selected_table.table"
+    metadata_file="$table_dir/$selected_table.meta"
+
+    # Check if table is empty
+    if [ ! -s "$table_file" ]; then
+        kdialog --sorry "Table '$selected_table' is empty."
+        return
+    fi
+
+    # Find primary key column name and index
+    pk_col=""
+    pk_index=0
+    IFS='|' read -ra metadata_array <"$metadata_file"
+    for i in "${!metadata_array[@]}"; do
+        IFS=':' read -r col_name col_type is_pk <<<"${metadata_array[$i]}"
+        if [ "$is_pk" == "PK" ]; then
+            pk_col="$col_name"
+            pk_index=$i
+            break
+        fi
+    done
+
+    if [ -z "$pk_col" ]; then
+        kdialog --sorry "No primary key found in table '$selected_table'."
+        return
+    fi
+
+    # Get PK value from user
+    pk_value=$(kdialog --inputbox "Enter Primary Key value to update:")
+    [ $? -ne 0 ] && return
+
+    # Find the record with the given PK
+    record=""
+    while IFS= read -r line; do
+        row_pk=$(echo "$line" | cut -d'|' -f$((pk_index + 1)))
+        if [ "$row_pk" = "$pk_value" ]; then
+            record="$line"
+            break
+        fi
+    done <"$table_file"
+
+    if [ -z "$record" ]; then
+        kdialog --sorry "No record found with Primary Key '$pk_value'."
+        return
+    fi
+
+    # Create arrays to store column info and current values
+    IFS='|' read -ra current_values <<<"$record"
+    columns=()
+    col_types=()
+
+    # Read metadata for column names and types
+    for meta in "${metadata_array[@]}"; do
+        IFS=':' read -r col_name col_type _ <<<"$meta"
+        columns+=("$col_name")
+        col_types+=("$col_type")
+    done
+
+    # Create temporary file for the updated data
+    temp_file=$(mktemp)
+    updated=false
+
+    # Process each line in the table
+    while IFS= read -r line; do
+        row_pk=$(echo "$line" | cut -d'|' -f$((pk_index + 1)))
+        if [ "$row_pk" = "$pk_value" ]; then
+            # This is the row to update
+            new_values=()
+
+            # Get new values for each column
+            for i in "${!columns[@]}"; do
+                col_name="${columns[$i]}"
+                col_type="${col_types[$i]}"
+                current_value="${current_values[$i]}"
+
+                while true; do
+                    hint="Update value for $col_name\nCurrent value: $current_value"
+                    [ "$col_type" == "1" ] && hint+="\n[Type: Integer]"
+                    [ "$col_type" == "2" ] && hint+="\n[Type: String]"
+                    [ "$i" == "$pk_index" ] && hint+="\n[Primary Key - Must be Unique]"
+                    hint+="\n(Press Enter to keep current value)"
+
+                    new_value=$(kdialog --inputbox "$hint")
+                    [ $? -ne 0 ] && rm "$temp_file" && return
+
+                    # If empty, keep current value
+                    if [ -z "$new_value" ]; then
+                        new_value="$current_value"
+                        break
+                    fi
+
+                    # Validate integer input
+                    if [ "$col_type" == "1" ] && ! [[ "$new_value" =~ ^[0-9]+$ ]]; then
+                        kdialog --sorry "Invalid integer."
+                        continue
+                    fi
+
+                    # Validate string input
+                    if [ "$col_type" == "2" ] && [[ "$new_value" == *"|"* ]]; then
+                        kdialog --sorry "The '|' character is not allowed."
+                        continue
+                    fi
+
+                    # Check PK uniqueness if updating PK
+                    if [ "$i" == "$pk_index" ] && [ "$new_value" != "$current_value" ]; then
+                        if grep -q "^$new_value|" "$table_file" 2>/dev/null || grep -q "|$new_value|" "$table_file" 2>/dev/null; then
+                            kdialog --sorry "Error: Primary key '$new_value' already exists."
+                            continue
+                        fi
+                    fi
+
+                    break
+                done
+
+                new_values+=("$new_value")
+                [ "$new_value" != "$current_value" ] && updated=true
+            done
+
+            # Write updated record
+            printf "%s\n" "$(
+                IFS="|"
+                echo "${new_values[*]}"
+            )" >>"$temp_file"
+        else
+            # Write unchanged record
+            echo "$line" >>"$temp_file"
+        fi
+    done <"$table_file"
+
+    if [ "$updated" = true ]; then
+        mv "$temp_file" "$table_file"
+        kdialog --msgbox "Record updated successfully."
+    else
+        rm "$temp_file"
+        kdialog --msgbox "No changes made to the record."
+    fi
+}
