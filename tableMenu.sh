@@ -280,7 +280,7 @@ insertIntoTable() {
     done
 
     # Insert data into table (separating values with '|')
-    echo "${row_data[*]}" | sed 's/ /|/g' >>"$table_file"
+    printf "%s\n" "$(IFS="|"; echo "${row_data[*]}")" >>"$table_file"
 
     kdialog --msgbox "Data inserted successfully into '$selected_table'."
 }
