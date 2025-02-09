@@ -124,6 +124,13 @@ checkIfTableExists() {
         kdialog --sorry "No tables found in database '$db_name'."
         return
     fi
+
+    table_menu=()
+    index=1
+    for table in $tables; do
+        table_menu+=("$index" "$table")
+        ((index++))
+    done
 }
 
 listTables() {
@@ -141,12 +148,6 @@ listTables() {
 
 dropTable() {
     checkIfTableExists "$db_name"
-    table_menu=()
-    index=1
-    for table in $tables; do
-        table_menu+=("$index" "$table")
-        ((index++))
-    done
 
     table_choice=$(kdialog --menu "Select a Table to Drop" "${table_menu[@]}")
 
@@ -162,13 +163,6 @@ dropTable() {
 
 insertIntoTable() {
     checkIfTableExists "$db_name"
-
-    table_menu=()
-    index=1
-    for table in $tables; do
-        table_menu+=("$index" "$table")
-        ((index++))
-    done
 
     table_choice=$(kdialog --menu "Select a table to insert data into:" "${table_menu[@]}")
     [ -z "$table_choice" ] && return
@@ -251,14 +245,6 @@ insertIntoTable() {
 
 selectFromTable() {
     checkIfTableExists "$db_name"
-
-    # Create table selection menu
-    table_menu=()
-    index=1
-    for table in $tables; do
-        table_menu+=("$index" "$table")
-        ((index++))
-    done
 
     table_choice=$(kdialog --menu "Select a table to query:" "${table_menu[@]}")
 
@@ -351,14 +337,6 @@ selectFromTable() {
 
 deleteFromTable() {
     checkIfTableExists "$db_name"
-
-    # Create table selection menu
-    table_menu=()
-    index=1
-    for table in $tables; do
-        table_menu+=("$index" "$table")
-        ((index++))
-    done
 
     table_choice=$(kdialog --menu "Select a table to delete from:" "${table_menu[@]}")
     [ -z "$table_choice" ] && return
@@ -463,14 +441,6 @@ deleteFromTable() {
 
 updateTable() {
     checkIfTableExists "$db_name"
-
-    # Create table selection menu
-    table_menu=()
-    index=1
-    for table in $tables; do
-        table_menu+=("$index" "$table")
-        ((index++))
-    done
 
     table_choice=$(kdialog --menu "Select a table to update:" "${table_menu[@]}")
     [ -z "$table_choice" ] && return
