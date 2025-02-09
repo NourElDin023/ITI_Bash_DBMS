@@ -212,43 +212,28 @@ insertIntoTable() {
 
         # Inside insertIntoTable() function, modify the hint message:
         while true; do
-            # Add user instruction to input dialog with data type
             hint="Enter value for $col_name"
-
-            # Add data type info
-            if [ "$col_type" == "1" ]; then
-                hint+="\n[Type: Integer]"
-            elif [ "$col_type" == "2" ]; then
-                hint+="\n[Type: String]"
-            fi
-
-            # Add PK or NULL info
-            if [ "$is_pk" == "PK" ]; then
-                hint+="\n[Primary Key - Must be Unique && Not Empty]"
-            else
-                hint+="\n(Leave empty and press Enter for NULL)"
-            fi
+            [ "$col_type" == "1" ] && hint+="\n[Type: Integer]"
+            [ "$col_type" == "2" ] && hint+="\n[Type: String]"
+            [ "$is_pk" == "PK" ] && hint+="\n[Primary Key - Must be Unique && Not Empty]" || hint+="\n(Press Enter for NULL)"
 
             value=$(kdialog --inputbox "$hint")
-
-            # **Handle Cancel or ESC Pressed**
             [ $? -ne 0 ] && return
 
-            # **Only Primary Key Can't Be Empty**
-            if [ -z "$value" ] && [ "$is_pk" == "PK" ]; then
-                kdialog --sorry "Error: Primary Key '$col_name' cannot be empty."
-                continue
-            elif [ -z "$value" ]; then
-                row_data+=("NULL") # Store NULL for optional fields
+            # Handle NULL values
+            if [ -z "$value" ]; then
+                [[ "$is_pk" == "PK" ]] && kdialog --sorry "Primary Key cannot be empty." && continue
+                row_data+=("NULL")
                 break
             fi
 
-            # Validate integer fields (col_type == "1" means it's an integer)
-            [[ "$col_type" == "1" && ! "$value" =~ ^[0-9]+$ ]] && kdialog --sorry "Invalid input for $col_name. Expected an integer." && continue
+            # Validate integer input (col_type == "1" means it's an integer)
+            [[ "$col_type" == "1" && ! "$value" =~ ^[0-9]+$ ]] && kdialog --sorry "Invalid integer." && continue
 
-            # Validate string fields (col_type == "2" means it's a string)
+            # Validate string input (col_type == "2" means it's a string)
             [[ "$col_type" == "2" && "$value" == *"|"* ]] && kdialog --sorry "Invalid input for $col_name. The '|' character is not allowed." && continue
-            # **Check PK Uniqueness**
+
+            # Check PK Uniqueness
             if [ "$is_pk" == "PK" ]; then
                 if grep -q "^$value|" "$table_file" 2>/dev/null; then
                     kdialog --sorry "Error: Primary key '$value' already exists in table '$selected_table'."
