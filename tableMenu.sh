@@ -269,16 +269,16 @@ selectFromTable() {
     metadata_file="$table_dir/$selected_table.meta"
 
     # Read column names from metadata
-        IFS='|' read -ra metadata_array <"$metadata_file"
-        header="<pre>\n"
-        separator="--------------------\n"
+    IFS='|' read -ra metadata_array <"$metadata_file"
+    header="<pre>\n"
+    separator="--------------------\n"
 
-        # Build header from metadata
-        for meta in "${metadata_array[@]}"; do
-            col_name="${meta%%:*}"
-            header+="$col_name\t"
-        done
-        header+="\n$separator"
+    # Build header from metadata
+    for meta in "${metadata_array[@]}"; do
+        col_name="${meta%%:*}"
+        header+="$col_name\t"
+    done
+    header+="\n$separator"
 
     # Show select options menu
     select_choice=$(kdialog --menu "Select Query Type" \
