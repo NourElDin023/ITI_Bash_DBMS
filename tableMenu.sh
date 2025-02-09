@@ -194,10 +194,7 @@ insertIntoTable() {
             columns+=("$col_name")
             col_types+=("$col_type")
             col_defs+=("$col_name:$col_type:$is_pk")
-
-            if [ "$is_pk" == "PK" ]; then
-                pk_index=$i
-            fi
+            [ "$is_pk" == "PK" ] && pk_index=$i
         fi
     done
 
