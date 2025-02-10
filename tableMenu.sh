@@ -226,7 +226,7 @@ insertIntoTable() {
 
             # Check PK Uniqueness
             if [ "$is_pk" == "PK" ]; then
-                if grep -q "^$value|" "$table_file" 2>/dev/null; then
+                if grep -q "^$value|" "$table_file"; then
                     kdialog --sorry "Error: Primary key '$value' already exists in table '$selected_table'."
                     continue
                 fi
@@ -551,7 +551,7 @@ updateTable() {
 
                     # Check PK uniqueness if updating PK
                     if [ "$i" == "$pk_index" ] && [ "$new_value" != "$current_value" ]; then
-                        if grep -q "^$new_value|" "$table_file" 2>/dev/null || grep -q "|$new_value|" "$table_file" 2>/dev/null; then
+                        if grep -q "^$new_value|" "$table_file" || grep -q "|$new_value|" "$table_file"; then
                             kdialog --sorry "Error: Primary key '$new_value' already exists."
                             continue
                         fi
