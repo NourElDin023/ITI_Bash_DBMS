@@ -11,6 +11,12 @@ ITI Bash DBMS is a terminal-launched application with a graphical interface buil
 - [NourEldin Nabil](https://github.com/NourElDin023)
 - [Mohamed Emary](https://github.com/MohamedEmary)
 
+## Demonstration
+
+A video demonstration of this project is included in the repository. You can view it to see the DBMS in action:
+
+<video src="https://github.com/user-attachments/assets/3a567dc1-4fbe-4065-9df9-61299ad75f06" height="480" controls></video>
+
 ## Features
 
 ### Database Management
