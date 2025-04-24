@@ -1,6 +1,6 @@
 # ITI Bash DBMS
 
-A fully functional Database Management System implemented entirely in Bash shell scripting, created in February 2025.
+A fully functional Database Management System implemented entirely in Bash shell scripting, created in February 2025 as part of the Information Technology Institute (ITI) Intensive Training Program (ITP).
 
 ## Project Overview
 
