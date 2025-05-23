@@ -99,7 +99,7 @@ sudo pacman -S kdialog
 
 1. Clone the repository:
     ```
-    git clone https://github.com/username/ITI_Bash_DBMS.git
+    git clone https://github.com/NourElDin023/ITI_Bash_DBMS.git
     cd ITI_Bash_DBMS
     ```
 
